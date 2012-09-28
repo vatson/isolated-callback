@@ -44,7 +44,7 @@ class IsolatedCallback
         }
 
         $this->callback = $callback;
-        $this->shared_memory_segment = shm_attach(mktime() + rand(1, 1000));
+        $this->shared_memory_segment = shm_attach(time() + rand(1, 1000));
     }
 
     /**
