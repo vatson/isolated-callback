@@ -3,6 +3,7 @@
 namespace Vatson\Tests\Callback;
 
 use Vatson\Callback\IsolatedCallback;
+use Fumocker\Fumocker;
 
 /**
  * @author Vadim Tyukov <brainreflex@gmail.com>
@@ -17,6 +18,15 @@ class IsolatedCallbackIntegrationTest extends \PHPUnit_Framework_TestCase
     {
         if (!function_exists('shm_attach') || !function_exists('pcntl_fork')) {
             $this->markTestSkipped('Required extensions are disabled');
+        }
+
+        // Dirty trick to override the native functions in the next unit tests
+        if (version_compare(PHP_VERSION, '5.4', '>')) {
+            $fumocker = new Fumocker();
+            $fumocker->getMock('Vatson\Callback', 'function_exists');
+            $fumocker->getMock('Vatson\Callback', 'shm_attach');
+            $fumocker->getMock('Vatson\Callback', 'shm_remove');
+            $fumocker->cleanup();
         }
     }
 
