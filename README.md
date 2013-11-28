@@ -4,6 +4,7 @@ Isolated Callback [![Build Status](https://secure.travis-ci.org/vatson/isolated-
 Allows to execute a callable in a fork
 
 
+Allows to avoid memory leaks
 
 ```
         $callback = function() {
@@ -11,5 +12,6 @@ Allows to execute a callable in a fork
         };
 
         $isolatedCallback = new IsolatedCallback($callback);
-        $this->assertEquals($callback(), $isolatedCallback()); // $isolatedCallback() execute callback in the fork
+        $this->assertEquals($callback(), $isolatedCallback()); 
+        // $isolatedCallback() executes callback in a forked process
 ```        
