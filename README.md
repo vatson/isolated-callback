@@ -2,3 +2,14 @@ Isolated Callback [![Build Status](https://secure.travis-ci.org/vatson/isolated-
 =================
 
 Allows to execute a callable in a fork
+
+
+
+```
+        $callback = function() {
+            return 'result!!!';
+        };
+
+        $isolatedCallback = new IsolatedCallback($callback);
+        $this->assertEquals($callback(), $isolatedCallback()); // $isolatedCallback() execute callback in the fork
+```        
