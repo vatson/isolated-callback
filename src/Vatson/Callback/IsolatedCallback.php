@@ -4,6 +4,7 @@ namespace Vatson\Callback;
 
 use Vatson\Callback\Exception\ExceptionDataHolder;
 use Vatson\Callback\Exception\IsolatedCallbackExecutionException;
+use UniversalErrorCatcher_Catcher as ErrorCatcher;
 
 /**
  * @author Vadim Tyukov <brainreflex@gmail.com>
@@ -75,9 +76,16 @@ class IsolatedCallback
      */
     protected function registerChildShutdown()
     {
+        (new ErrorCatcher)
+            ->registerCallback(function($e) {
+                $this->sendChildExecutionResult(new ExceptionDataHolder($e));
+            })
+            ->start();
+
         register_shutdown_function(function () {
             posix_kill(getmypid(), SIGKILL);
         });
+
     }
 
     /**
