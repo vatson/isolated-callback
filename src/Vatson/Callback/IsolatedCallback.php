@@ -76,11 +76,11 @@ class IsolatedCallback
      */
     protected function registerChildShutdown()
     {
-        (new ErrorCatcher)
-            ->registerCallback(function($e) {
-                $this->sendChildExecutionResult(new ExceptionDataHolder($e));
-            })
-            ->start();
+        $catcher = new ErrorCatcher;
+        $catcher->registerCallback(function ($e) {
+            $this->sendChildExecutionResult(new ExceptionDataHolder($e));
+        });
+        $catcher->start();
 
         register_shutdown_function(function () {
             posix_kill(getmypid(), SIGKILL);
