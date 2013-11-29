@@ -85,16 +85,46 @@ class IsolatedCallbackIntegrationTest extends \PHPUnit_Framework_TestCase
      * @test
      *
      * @expectedException \Vatson\Callback\Exception\IsolatedCallbackExecutionException
-     * @expectedExceptionMessage The exception should be сaught and wrapped
+     * @expectedExceptionMessage The exception should be caught and wrapped
      * @expectedExceptionCode 100
      */
     public function rethrowExceptionWhenExceptionWasThrownInChild()
     {
         $callback = function() {
-            throw new \Exception('The exception should be сaught and wrapped', 100);
+            throw new \Exception('The exception should be caught and wrapped', 100);
         };
 
         $isolatedCallback = new IsolatedCallback($callback);
         $isolatedCallback();
+    }
+
+    /**
+     * @test
+     *
+     * @expectedException \Vatson\Callback\Exception\IsolatedCallbackExecutionException
+     * @expectedExceptionMessage The fatal error should be caught and wrapped
+     */
+    public function throwExceptionWhenErrorOccursInChild()
+    {
+        $callback = function() {
+            @trigger_error('The fatal error should be caught and wrapped', E_USER_ERROR);
+        };
+
+        $isolatedCallback = new IsolatedCallback($callback);
+        $isolatedCallback();
+    }
+
+    /**
+     * @test
+     */
+    public function shouldIgnoreNonfatalErrorDuringCallbackExecution()
+    {
+        $callback = function() {
+            trigger_error('Notice!', E_USER_NOTICE);
+            return 'The execution was not interrupted';
+        };
+
+        $isolatedCallback = new IsolatedCallback($callback);
+        $this->assertEquals('The execution was not interrupted', $isolatedCallback());
     }
 }
