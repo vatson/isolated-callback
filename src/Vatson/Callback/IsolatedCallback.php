@@ -4,7 +4,8 @@ namespace Vatson\Callback;
 
 use Vatson\Callback\Exception\ExceptionDataHolder;
 use Vatson\Callback\Exception\IsolatedCallbackExecutionException;
-use UniversalErrorCatcher_Catcher as ErrorCatcher;
+use Vatson\Callback\Ipc\Semaphore;
+use Vatson\Callback\Ipc\IpcInterface;
 
 /**
  * @author Vadim Tyukov <brainreflex@gmail.com>
@@ -18,24 +19,16 @@ class IsolatedCallback
     protected $callback;
 
     /**
-     * @var resource
+     * @var IpcInterface
      */
-    protected $shared_memory_segment;
+    protected $ipc;
 
     /**
-     * @var int
+     * @param $callback
+     * @param IpcInterface $ipc
      */
-    protected static $SEGMENT_VAR_ID = 1;
-
-    /**
-     * @param callable $callback
-     */
-    public function __construct($callback)
+    public function __construct($callback, IpcInterface $ipc = null)
     {
-        if (!function_exists('shm_attach')) {
-            throw new \RuntimeException('You need to enabled Shared Memory System V(see more "Semaphore")');
-        }
-
         if (!function_exists('pcntl_fork')) {
             throw new \RuntimeException('You need to enable PCNTL');
         }
@@ -45,7 +38,7 @@ class IsolatedCallback
         }
 
         $this->callback = $callback;
-        $this->shared_memory_segment = shm_attach(time() + rand(1, 1000));
+        $this->ipc = $ipc ? : new Semaphore();
     }
 
     /**
@@ -76,16 +69,20 @@ class IsolatedCallback
      */
     protected function registerChildShutdown()
     {
-        $catcher = new ErrorCatcher;
-        $catcher->registerCallback(function ($e) {
-            $this->sendChildExecutionResult(new ExceptionDataHolder($e));
+        $ipc = $this->ipc;
+
+        register_shutdown_function(function () use ($ipc) {
+            $error = error_get_last();
+            if ($error && isset($error['type']) && in_array($error['type'], array(E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR))) {
+                $ipc->put(new ExceptionDataHolder(
+                    new \ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line'])
+                ));
+            }
         });
-        $catcher->start();
 
         register_shutdown_function(function () {
             posix_kill(getmypid(), SIGKILL);
         });
-
     }
 
     /**
@@ -96,7 +93,7 @@ class IsolatedCallback
     protected function handleParentProcess()
     {
         pcntl_wait($status);
-        $result = $this->receiveChildExecutionResult();
+        $result = $this->ipc->get();
 
         if ($result instanceof ExceptionDataHolder) {
             throw new IsolatedCallbackExecutionException($result);
@@ -118,35 +115,6 @@ class IsolatedCallback
             $result = new ExceptionDataHolder($e);
         }
 
-        $this->sendChildExecutionResult($result);
-    }
-
-    /**
-     * @param mixed $result
-     */
-    protected function sendChildExecutionResult($result)
-    {
-        shm_put_var($this->shared_memory_segment, self::$SEGMENT_VAR_ID, $result);
-    }
-
-    /**
-     * @return mixed
-     */
-    protected function receiveChildExecutionResult()
-    {
-        if (shm_has_var($this->shared_memory_segment, self::$SEGMENT_VAR_ID)) {
-            $result = shm_get_var($this->shared_memory_segment, self::$SEGMENT_VAR_ID);
-            shm_remove_var($this->shared_memory_segment, self::$SEGMENT_VAR_ID);
-
-            return $result;
-        }
-    }
-
-    /**
-     * Removes shared memory segment
-     */
-    public function __destruct()
-    {
-        shm_remove($this->shared_memory_segment);
+        $this->ipc->put($result);
     }
 }

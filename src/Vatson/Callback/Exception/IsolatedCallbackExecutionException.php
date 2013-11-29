@@ -14,7 +14,7 @@ class IsolatedCallbackExecutionException extends \RuntimeException
     protected $original_class;
 
     /**
-     * @param Exception $exception_holder
+     * @param ExceptionDataHolder $exception_holder
      */
     public function __construct(ExceptionDataHolder $exception_holder)
     {

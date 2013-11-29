@@ -35,7 +35,7 @@ class IsolatedCallbackIntegrationTest extends \PHPUnit_Framework_TestCase
      */
     public function shouldReturnCallbackResult()
     {
-        $callback = function() {
+        $callback = function () {
             return 'result!!!';
         };
 
@@ -51,7 +51,7 @@ class IsolatedCallbackIntegrationTest extends \PHPUnit_Framework_TestCase
     public function shouldInvokeCallbackInChildProcess()
     {
         $parent_pid = getmypid();
-        $callback = function() {
+        $callback = function () {
             // returns the child's pid
             return getmypid();
         };
@@ -67,13 +67,13 @@ class IsolatedCallbackIntegrationTest extends \PHPUnit_Framework_TestCase
     /**
      * @test
      *
-     *  @depends shouldReturnCallbackResult
+     * @depends shouldReturnCallbackResult
      */
     public function shouldPassArgumentsToCallback()
     {
         $arg1 = $arg2 = 1;
-        $callback = function($arg1, $arg2) {
-            return $arg1+$arg2;
+        $callback = function ($arg1, $arg2) {
+            return $arg1 + $arg2;
         };
 
         $isolatedCallback = new IsolatedCallback($callback);
@@ -90,7 +90,7 @@ class IsolatedCallbackIntegrationTest extends \PHPUnit_Framework_TestCase
      */
     public function rethrowExceptionWhenExceptionWasThrownInChild()
     {
-        $callback = function() {
+        $callback = function () {
             throw new \Exception('The exception should be caught and wrapped', 100);
         };
 
@@ -102,12 +102,12 @@ class IsolatedCallbackIntegrationTest extends \PHPUnit_Framework_TestCase
      * @test
      *
      * @expectedException \Vatson\Callback\Exception\IsolatedCallbackExecutionException
-     * @expectedExceptionMessage The fatal error should be caught and wrapped
+     * @expectedExceptionMessage Call to undefined method stdClass::method()
      */
     public function throwExceptionWhenErrorOccursInChild()
     {
-        $callback = function() {
-            @trigger_error('The fatal error should be caught and wrapped', E_USER_ERROR);
+        $callback = function () {
+            @\stdClass::method();
         };
 
         $isolatedCallback = new IsolatedCallback($callback);
@@ -119,7 +119,9 @@ class IsolatedCallbackIntegrationTest extends \PHPUnit_Framework_TestCase
      */
     public function shouldIgnoreNonfatalErrorDuringCallbackExecution()
     {
-        $callback = function() {
+        \PHPUnit_Framework_Error_Notice::$enabled = FALSE;
+
+        $callback = function () {
             trigger_error('Notice!', E_USER_NOTICE);
             return 'The execution was not interrupted';
         };
