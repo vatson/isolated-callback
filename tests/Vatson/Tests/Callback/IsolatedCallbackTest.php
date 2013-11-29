@@ -2,6 +2,7 @@
 
 namespace Vatson\Tests\Callback;
 
+use Vatson\Callback\Ipc\IpcInterface;
 use Vatson\Callback\IsolatedCallback;
 use Fumocker\Fumocker;
 
@@ -41,46 +42,19 @@ class IsolatedCallbackTest extends \PHPUnit_Framework_TestCase
      * @test
      *
      * @expectedException \RuntimeException
-     * @expectedExceptionMessage You need to enabled Shared Memory System V(see more "Semaphore")
-     */
-    public function throwExceptionWhenIPCIsDisabled()
-    {
-        $file_exists_mock = $this->fumocker->getMock('Vatson\Callback', 'function_exists');
-
-        $file_exists_mock
-            ->expects($this->once())
-            ->method('function_exists')
-            ->with('shm_attach')
-            ->will($this->returnValue(false))
-        ;
-
-        new IsolatedCallback(function(){});
-    }
-
-    /**
-     * @test
-     *
-     * @expectedException \RuntimeException
      * @expectedExceptionMessage You need to enable PCNTL
      */
     public function throwExceptionWhenPcntlIsDisabled()
     {
-        $file_exists_mock = $this->fumocker->getMock('Vatson\Callback', 'function_exists');
-
-        $file_exists_mock
-            ->expects($this->at(0))
-            ->method('function_exists')
-            ->will($this->returnValue(true))
-        ;
-
-        $file_exists_mock
-            ->expects($this->at(1))
+        $this->fumocker
+            ->getMock('Vatson\Callback', 'function_exists')
+            ->expects($this->once())
             ->method('function_exists')
             ->with('pcntl_fork')
-            ->will($this->returnValue(false))
-        ;
+            ->will($this->returnValue(false));
 
-        new IsolatedCallback(function(){});
+        new IsolatedCallback(function () {
+        }, $this->createIpcMock());
     }
 
     /**
@@ -92,7 +66,7 @@ class IsolatedCallbackTest extends \PHPUnit_Framework_TestCase
      */
     public function throwExceptionWhenConstructWithInvalidCallback($invalid_callback)
     {
-        $this->createIsolatedCallback($invalid_callback);
+        $this->createIsolatedCallback($invalid_callback, $this->createIpcMock());
     }
 
     /**
@@ -102,44 +76,47 @@ class IsolatedCallbackTest extends \PHPUnit_Framework_TestCase
      */
     public function shouldBeConstructedWithValidCallback($valid_callback)
     {
-        $this->createIsolatedCallback($valid_callback);
+        $this->createIsolatedCallback($valid_callback, $this->createIpcMock());
     }
 
     /**
      * @test
      */
-    public function shouldRemoveSharedMemorySegmentDuringDestruction()
+    public function shouldInvokeCallbackInForkAndPutResultInIpc()
     {
-        $file_exists_mock = $this->fumocker->getMock('Vatson\Callback', 'function_exists');
+        $test = $this;
+        $ipc = $this->createIpcMock();
 
-        $file_exists_mock
-            ->expects($this->at(0))
-            ->method('function_exists')
-            ->will($this->returnValue(true))
-        ;
+        $callback = function () use ($ipc, $test) {
+            $result = uniqid();
+            $ipc->expects($test->once())
+                ->method('put')
+                ->with($result);
+            return $result;
+        };
 
-        $file_exists_mock
-            ->expects($this->at(1))
-            ->method('function_exists')
-            ->will($this->returnValue(true))
-        ;
+        $isolated_callback = $this->createIsolatedCallback($callback, $ipc);
+        $isolated_callback();
+    }
 
-        $this->fumocker
-            ->getMock('Vatson\Callback', 'shm_attach')
-            ->expects($this->once())
-            ->method('shm_attach')
-            ->will($this->returnValue($this->shared_memory_segment_stub))
-        ;
+    /**
+     * @test
+     */
+    public function shouldInvokeCallbackWitArgsGivenThroughIsolatedCallback()
+    {
+        $test = $this;
+        $ipc = $this->createIpcMock();
+        $callback_argument = array(uniqid());
 
-        $this->fumocker
-            ->getMock('Vatson\Callback', 'shm_remove')
-            ->expects($this->once())
-            ->method('shm_remove')
-            ->with($this->shared_memory_segment_stub)
-        ;
+        $callback = function () use ($callback_argument, $ipc, $test) {
+            $ipc->expects($test->once())
+                ->method('put')
+                ->with(array($callback_argument));
+            return func_get_args();
+        };
 
-        $isolated_callback = new IsolatedCallback(function(){});
-        unset($isolated_callback);
+        $isolated_callback = $this->createIsolatedCallback($callback, $ipc);
+        $isolated_callback($callback_argument);
     }
 
     /**
@@ -172,43 +149,29 @@ class IsolatedCallbackTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @return \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected function createIpcMock()
+    {
+        return $this->getMock('Vatson\Callback\Ipc\IpcInterface');
+    }
+
+    /**
      * Helps to automate the passing extensions checks
      *
-     * @param $callback
-     * @return \Vatson\Callback\IsolatedCallback
+     * @param callable $callback
+     * @param IpcInterface $ipc
+     * @return IsolatedCallback
      */
-    protected function createIsolatedCallback($callback)
+    protected function createIsolatedCallback($callback, IpcInterface $ipc = null)
     {
-        $file_exists_mock = $this->fumocker->getMock('Vatson\Callback', 'function_exists');
-
-        $file_exists_mock
-            ->expects($this->at(0))
-            ->method('function_exists')
-            ->will($this->returnValue(true))
-        ;
-
-        $file_exists_mock
-            ->expects($this->at(1))
-            ->method('function_exists')
-            ->will($this->returnValue(true))
-        ;
-
-        // Stubs shared memory attach
         $this->fumocker
-            ->getMock('Vatson\Callback', 'shm_attach')
-            ->expects($this->any())
-            ->method('shm_attach')
-            ->will($this->returnValue($this->shared_memory_segment_stub))
-        ;
+            ->getMock('Vatson\Callback', 'function_exists')
+            ->expects($this->once())
+            ->method('function_exists')
+            ->with('pcntl_fork')
+            ->will($this->returnValue(true));
 
-        // Stubs shared memory remove
-        $this->fumocker
-            ->getMock('Vatson\Callback', 'shm_remove')
-            ->expects($this->any())
-            ->method('shm_remove')
-            ->with($this->shared_memory_segment_stub)
-        ;
-
-        return new IsolatedCallback($callback);
+        return new IsolatedCallback($callback, $ipc);
     }
 }
