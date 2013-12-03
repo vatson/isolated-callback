@@ -4,7 +4,7 @@ namespace Vatson\Callback;
 
 use Vatson\Callback\Exception\ExceptionDataHolder;
 use Vatson\Callback\Exception\IsolatedCallbackExecutionException;
-use Vatson\Callback\Ipc\Semaphore;
+use Vatson\Callback\Ipc\SharedMemory;
 use Vatson\Callback\Ipc\IpcInterface;
 
 /**
@@ -38,7 +38,7 @@ class IsolatedCallback
         }
 
         $this->callback = $callback;
-        $this->ipc = $ipc ? : new Semaphore();
+        $this->ipc = $ipc ? : new SharedMemory();
     }
 
     /**

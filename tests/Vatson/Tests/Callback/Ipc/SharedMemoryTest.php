@@ -3,9 +3,9 @@
 namespace Vatson\Tests\Callback\Ipc;
 
 use Fumocker\Fumocker;
-use Vatson\Callback\Ipc\Semaphore;
+use Vatson\Callback\Ipc\SharedMemory;
 
-class SemaphoreTest extends \PHPUnit_Framework_TestCase
+class SharedMemoryTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var Fumocker
@@ -38,7 +38,7 @@ class SemaphoreTest extends \PHPUnit_Framework_TestCase
      */
     public function shouldImplementsIpcInterface()
     {
-        $rc = new \ReflectionClass('Vatson\Callback\Ipc\Semaphore');
+        $rc = new \ReflectionClass('Vatson\Callback\Ipc\SharedMemory');
         $this->assertTrue($rc->implementsInterface('Vatson\Callback\Ipc\IpcInterface'));
     }
 
@@ -57,7 +57,7 @@ class SemaphoreTest extends \PHPUnit_Framework_TestCase
             ->with('shm_attach')
             ->will($this->returnValue(false));
 
-        new Semaphore();
+        new SharedMemory();
     }
 
     /**
@@ -84,7 +84,7 @@ class SemaphoreTest extends \PHPUnit_Framework_TestCase
             ->method('shm_remove')
             ->with($this->shared_memory_segment_stub);
 
-        $isolated_callback = new Semaphore();
+        $isolated_callback = new SharedMemory();
         unset($isolated_callback);
     }
 }
