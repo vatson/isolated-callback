@@ -8,7 +8,7 @@ Isolated callback allows to execute any callable statement in a fork and  avoid 
 
 Installation is damn easy, thanks to Composer:
 
-    composer require phpoption/phpoption
+    composer require vatson/isolated-callback
 
 or add the requirements to your composer.json file
 
@@ -26,17 +26,19 @@ and run `update`
 
 Quick and easy. Let's create some anonymous function that generates a lot of data, but the result is a small
 
-    <?php
-    include_once 'vendor/autoload.php';
+```php
+<?php
+include_once 'vendor/autoload.php';
 
-    use Vatson\Callback\IsolatedCallback;
+use Vatson\Callback\IsolatedCallback;
 
-    $cb = function() {
-        return array_slice(range(1, 100000), rand(1,100), rand(1,10));
-    };
+$cb = function() {
+    return array_slice(range(1, 100000), rand(1,100), rand(1,10));
+};
 
-    $icb = new IsolatedCallback($cb);
-    $random_slice = $icb();
+$icb = new IsolatedCallback($cb);
+$random_slice = $icb();
+```
 
 That's it. Your callback will be run in separate fork and the result will be sent to the main process.
 
@@ -44,35 +46,39 @@ That's it. Your callback will be run in separate fork and the result will be sen
 
 Note, you can call it with args and bind some local vars with your lambda functions.
 
-    <?php
-    include_once 'vendor/autoload.php';
+```php
+<?php
+include_once 'vendor/autoload.php';
 
-    use Vatson\Callback\IsolatedCallback;
+use Vatson\Callback\IsolatedCallback;
 
-    $slice_length = rand(1,5);
-    $cb = function($max_range) use($slice_length) {
-        return array_slice(range(1, $max_range), rand(1,$max_range), $slice_length);
-    };
+$slice_length = rand(1,5);
+$cb = function($max_range) use($slice_length) {
+    return array_slice(range(1, $max_range), rand(1,$max_range), $slice_length);
+};
 
-    $icb = new IsolatedCallback($cb);
-    $random_slice = $icb(1000);
+$icb = new IsolatedCallback($cb);
+$random_slice = $icb(1000);
+```
 
 ### Objects as a result
 
 Also you can send not only scalars, but simple objects (POPO). And rember, objects based on or which contain `Resources` can't be serialized as a result.
 
-    <?php
+```php
+<?php
 
-    use Vatson\Callback\IsolatedCallback;
+use Vatson\Callback\IsolatedCallback;
 
-    $cb = function() {
-        $popo_object = new \stdClass();
-        $popo_object->property = 'value';
-        return $popo_object;
-    };
+$cb = function() {
+    $popo_object = new \stdClass();
+    $popo_object->property = 'value';
+    return $popo_object;
+};
 
-    $icb = new IsolatedCallback($cb);
-    $property = $icb()->property;
+$icb = new IsolatedCallback($cb);
+$property = $icb()->property;
+```
 
 ### Restrictions
 
