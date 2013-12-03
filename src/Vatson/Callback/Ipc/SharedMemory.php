@@ -3,7 +3,7 @@
 namespace Vatson\Callback\Ipc;
 
 
-class Semaphore implements IpcInterface
+class SharedMemory implements IpcInterface
 {
     /**
      * @var resource
