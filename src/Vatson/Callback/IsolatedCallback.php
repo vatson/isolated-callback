@@ -52,7 +52,7 @@ class IsolatedCallback
     {
         $arguments = func_get_args();
 
-        switch ($pid = pcntl_fork()) {
+        switch (pcntl_fork()) {
             case -1:
                 throw new \RuntimeException();
             case 0:
