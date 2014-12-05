@@ -1,4 +1,4 @@
-# Isolated Callback [![Build Status](https://secure.travis-ci.org/vatson/isolated-callback.png)](http://travis-ci.org/vatson/isolated-callback) [![Latest Stable Version](https://poser.pugx.org/vatson/isolated-callback/v/stable.png)](https://packagist.org/packages/vatson/isolated-callback) [![Total Downloads](https://poser.pugx.org/vatson/isolated-callback/downloads.png)](https://packagist.org/packages/vatson/isolated-callback)
+# Isolated Callback [![Build Status](https://img.shields.io/travis/vatson/isolated-callback.svg)](http://travis-ci.org/vatson/isolated-callback) [![Latest Stable Version](https://img.shields.io/packagist/v/vatson/isolated-callback.svg)](https://packagist.org/packages/vatson/isolated-callback) [![Total Downloads](https://img.shields.io/packagist/dt/vatson/isolated-callback.svg)](https://packagist.org/packages/vatson/isolated-callback) [![License](https://img.shields.io/packagist/l/vatson/isolated-callback.svg)](https://raw.githubusercontent.com/vatson/isolated-callback/master/LICENSE)
 
 Tiny but still powerful tool to fork it all.
 
